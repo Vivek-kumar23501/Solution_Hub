@@ -11,7 +11,7 @@ const Taskbar = ({ activeSection }) => {
 
   return (
     <div style={{ display: "flex", justifyContent: "space-around", padding: "0.5rem", borderTop: "1px solid #ccc", position: "fixed", bottom: 0, width: "100%", background: "#fff" }}>
-      <Button color={activeSection === "home" ? "primary" : "light"} onClick={() => handleClick("/dashboard")}>
+      <Button color={activeSection === "home" ? "primary" : "light"} onClick={() => handleClick("/dashboard/home")}>
         <FaHome size={20} />
         <div style={{ fontSize: "12px" }}>Home</div>
       </Button>
