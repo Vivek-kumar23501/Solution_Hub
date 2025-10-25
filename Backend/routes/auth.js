@@ -9,20 +9,25 @@ import jwt from "jsonwebtoken";
 dotenv.config();
 const router = express.Router();
 
-let otpStore = {}; // Temporary OTP storage
-let forgotOtpStore = {}; // Temporary store for forgot password OTPs
+// Temporary OTP stores
+let otpStore = {};
+let forgotOtpStore = {};
 
-// ----------------------
+// ==============================
 // Send OTP for Signup
-// ----------------------
+// ==============================
 router.post("/send-otp", async (req, res) => {
   const { name, email, mobile } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
     const existingPending = await PendingUser.findOne({ email });
-    if (existingUser || existingPending) 
-      return res.status(400).json({ message: "Email already registered or pending!" });
+
+    if (existingUser || existingPending) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered or pending!" });
+    }
 
     const otp = Math.floor(1000 + Math.random() * 9000);
     otpStore[email] = { otp, name, mobile };
@@ -41,27 +46,28 @@ router.post("/send-otp", async (req, res) => {
 
     res.json({ success: true, message: "OTP sent!" });
   } catch (err) {
-    console.error(err);
+    console.error("Send OTP Error:", err);
     res.status(500).json({ success: false, message: "Failed to send OTP" });
   }
 });
 
-// ----------------------
-// Verify OTP and save pending user
-// ----------------------
+// ==============================
+// Verify OTP
+// ==============================
 router.post("/verify-otp", async (req, res) => {
   const { email, otp } = req.body;
 
-  if (!otpStore[email]) 
+  if (!otpStore[email]) {
     return res.status(400).json({ success: false, message: "OTP expired or not requested" });
+  }
 
   if (otpStore[email].otp == otp) {
     const { name, mobile } = otpStore[email];
 
-    let pending = await PendingUser.findOne({ email });
-    if (!pending) {
-      pending = new PendingUser({ name, email, mobile, otpVerified: true });
-      await pending.save();
+    let pendingUser = await PendingUser.findOne({ email });
+    if (!pendingUser) {
+      pendingUser = new PendingUser({ name, email, mobile, otpVerified: true });
+      await pendingUser.save();
     }
 
     res.json({ success: true, message: "OTP verified!" });
@@ -70,9 +76,9 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
-// ----------------------
-// Register user after OTP verification
-// ----------------------
+// ==============================
+// Register User (after OTP verification)
+// ==============================
 router.post("/register", async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -84,43 +90,57 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Move to User collection
     const newUser = new User({
       name: pendingUser.name,
       email: pendingUser.email,
       mobile: pendingUser.mobile,
       password: hashedPassword,
-      role: role || "user", // default role is user
+      role: role || "user",
     });
 
-    await newUser.save();
-
-    // Delete from pending
+    const savedUser = await newUser.save();
     await PendingUser.deleteOne({ email });
 
-    res.json({ success: true, message: "Account created successfully!" });
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: savedUser._id, email: savedUser.email, role: savedUser.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      message: "Account created successfully!",
+      token,
+      user: {
+        id: savedUser._id, // ✅ userId to store in frontend
+        name: savedUser.name,
+        email: savedUser.email,
+        role: savedUser.role,
+      },
+    });
   } catch (err) {
-    console.error(err);
+    console.error("Register Error:", err);
     res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
 
-// ----------------------
-// Login Route
-// ----------------------
+// ==============================
+// Login
+// ==============================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      const pending = await PendingUser.findOne({ email });
-      if (pending) return res.status(400).json({ success: false, message: "Account pending, please complete password setup." });
-      return res.status(400).json({ success: false, message: "User not found. Please signup." });
+      return res.status(400).json({ success: false, message: "User not found" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ success: false, message: "Invalid password" });
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Invalid password" });
+    }
 
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
@@ -128,21 +148,34 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ success: true, token, user });
+    res.json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id, // ✅ userId to store in frontend
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
-    console.error(err);
+    console.error("Login Error:", err);
     res.status(500).json({ success: false, message: "Login failed" });
   }
 });
 
-// ----------------------
+// ==============================
 // Forgot Password - Send OTP
-// ----------------------
+// ==============================
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
+
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ success: false, message: "Email not registered!" });
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Email not registered!" });
+    }
 
     const otp = Math.floor(1000 + Math.random() * 9000);
     forgotOtpStore[email] = { otp, timestamp: Date.now() };
@@ -161,19 +194,21 @@ router.post("/forgot-password", async (req, res) => {
 
     res.json({ success: true, message: "OTP sent to your email" });
   } catch (err) {
-    console.error(err);
+    console.error("Forgot Password Error:", err);
     res.status(500).json({ success: false, message: "Error sending OTP" });
   }
 });
 
-// ----------------------
+// ==============================
 // Forgot Password - Verify OTP
-// ----------------------
+// ==============================
 router.post("/forgot-password/verify-otp", (req, res) => {
   const { email, otp } = req.body;
-
   const record = forgotOtpStore[email];
-  if (!record) return res.status(400).json({ success: false, message: "OTP not requested or expired" });
+
+  if (!record) {
+    return res.status(400).json({ success: false, message: "OTP not requested or expired" });
+  }
 
   if (record.otp == otp) {
     res.json({ success: true, message: "OTP verified" });
@@ -182,9 +217,9 @@ router.post("/forgot-password/verify-otp", (req, res) => {
   }
 });
 
-// ----------------------
+// ==============================
 // Forgot Password - Reset
-// ----------------------
+// ==============================
 router.put("/forgot-password/reset", async (req, res) => {
   const { email, password } = req.body;
 
@@ -195,12 +230,11 @@ router.put("/forgot-password/reset", async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     await User.updateOne({ email }, { $set: { password: hashedPassword } });
-
     delete forgotOtpStore[email];
 
     res.json({ success: true, message: "Password updated successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Reset Password Error:", err);
     res.status(500).json({ success: false, message: "Error updating password" });
   }
 });
