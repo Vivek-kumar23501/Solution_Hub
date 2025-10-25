@@ -76,19 +76,17 @@ router.post(
   async (req, res) => createPostHandler(req, res, "Doubt")
 );
 
-// --------------------
-// Get All Posts (including doubts)
-// --------------------
-router.get("/", async (req, res) => {
+
+// Get all posts and doubts for a user
+router.get("/user/:userId", verifyToken, async (req, res) => {
+  const { userId } = req.params;
+
   try {
-    const posts = await Post.find()
-      .populate("userId", "name email")
-      .sort({ createdAt: -1 });
-    res.json(posts);
+    const posts = await Post.find({ user: userId }).sort({ createdAt: -1 }); // newest first
+    res.json({ success: true, posts });
   } catch (err) {
-    console.error("Error fetching posts:", err);
-    res.status(500).json({ success: false, message: "Error fetching posts" });
+    console.error("Fetch User Posts Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch posts" });
   }
 });
-
 export default router;

@@ -5,6 +5,8 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { verifyToken } from "../middleware/authMiddleware.js";
+
 
 dotenv.config();
 const router = express.Router();
@@ -238,5 +240,150 @@ router.put("/forgot-password/reset", async (req, res) => {
     res.status(500).json({ success: false, message: "Error updating password" });
   }
 });
+
+
+// ---------------------
+// Get all users (except self and already friends / sent requests)
+// ---------------------
+router.get("/all-users", verifyToken, async (req, res) => {
+  try {
+    const loggedInUser = await User.findById(req.user.id);
+    const excludeIds = [req.user.id, ...loggedInUser.friends, ...loggedInUser.sentRequests];
+
+    const users = await User.find(
+      { _id: { $nin: excludeIds } },
+      { password: 0, friends: 0, friendRequests: 0, sentRequests: 0 }
+    );
+
+    res.json({ success: true, users });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch users" });
+  }
+});
+
+// ---------------------
+// Get received friend requests
+// ---------------------
+router.get("/friend-requests", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("friendRequests", "name email");
+    res.json({ success: true, friendRequests: user.friendRequests });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch friend requests" });
+  }
+});
+
+// ---------------------
+// Get sent friend requests
+// ---------------------
+router.get("/sent-requests", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("sentRequests", "name email");
+    res.json({ success: true, sentRequests: user.sentRequests });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch sent requests" });
+  }
+});
+
+// ---------------------
+// Send friend request
+// ---------------------
+router.post("/send-friend-request/:id", verifyToken, async (req, res) => {
+  try {
+    const sender = await User.findById(req.user.id);
+    const receiver = await User.findById(req.params.id);
+
+    if (!receiver) return res.status(404).json({ success: false, message: "User not found" });
+
+    if (receiver.friendRequests.includes(sender._id) || sender.sentRequests.includes(receiver._id))
+      return res.status(400).json({ success: false, message: "Request already sent" });
+
+    receiver.friendRequests.push(sender._id);
+    sender.sentRequests.push(receiver._id);
+
+    await receiver.save();
+    await sender.save();
+
+    res.json({ success: true, requestedUser: receiver, message: "Friend request sent" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to send friend request" });
+  }
+});
+
+// ---------------------
+// Accept friend request
+// ---------------------
+router.post("/accept-friend-request/:id", verifyToken, async (req, res) => {
+  try {
+    const receiver = await User.findById(req.user.id);
+    const sender = await User.findById(req.params.id);
+
+    if (!receiver.friendRequests.includes(sender._id))
+      return res.status(400).json({ success: false, message: "No friend request from this user" });
+
+    // Add to friends
+    receiver.friends.push(sender._id);
+    sender.friends.push(receiver._id);
+
+    // Remove from requests
+    receiver.friendRequests = receiver.friendRequests.filter((id) => !id.equals(sender._id));
+    sender.sentRequests = sender.sentRequests.filter((id) => !id.equals(receiver._id));
+
+    await receiver.save();
+    await sender.save();
+
+    res.json({ success: true, message: "Friend request accepted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to accept friend request" });
+  }
+});
+
+
+
+// ---------------------
+// Get My Profile Data
+// ---------------------
+router.get("/my-profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select("-password") // exclude password
+      .populate("friends", "name email mobile"); // populate friends list
+
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("Fetch Profile Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch profile data" });
+  }
+});
+
+// DELETE a friend
+router.delete("/remove-friend/:friendId", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const { friendId } = req.params;
+
+  try {
+    // Remove friendId from logged-in user's friends
+    await User.findByIdAndUpdate(userId, { $pull: { friends: friendId } });
+
+    // Remove userId from friend's friends
+    await User.findByIdAndUpdate(friendId, { $pull: { friends: userId } });
+
+    res.json({ success: true, message: "Friend removed successfully" });
+  } catch (err) {
+    console.error("Remove Friend Error:", err);
+    res.status(500).json({ success: false, message: "Failed to remove friend" });
+  }
+});
+
+
+
+
 
 export default router;

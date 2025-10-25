@@ -16,7 +16,7 @@ const Taskbar = ({ activeSection }) => {
         <div style={{ fontSize: "12px" }}>Home</div>
       </Button>
 
-      <Button color={activeSection === "friends" ? "primary" : "light"} onClick={() => handleClick("/dashboard/friends")}>
+      <Button color={activeSection === "friends" ? "primary" : "light"} onClick={() => handleClick("/dashboard/friend-suggestions")}>
         <FaUserFriends size={20} />
         <div style={{ fontSize: "12px" }}>Friends</div>
       </Button>
