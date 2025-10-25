@@ -76,17 +76,46 @@ router.post(
   async (req, res) => createPostHandler(req, res, "Doubt")
 );
 
-
+// --------------------
 // Get all posts and doubts for a user
+// --------------------
 router.get("/user/:userId", verifyToken, async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const posts = await Post.find({ user: userId }).sort({ createdAt: -1 }); // newest first
+    const posts = await Post.find({ userId }).sort({ createdAt: -1 }); // newest first
     res.json({ success: true, posts });
   } catch (err) {
     console.error("Fetch User Posts Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch posts" });
+  }
+});
+
+// --------------------
+// Get all posts (feed)
+// --------------------
+router.get("/", verifyToken, async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate("userId", "name email"); // populate user info
+    res.json({ success: true, posts });
+  } catch (err) {
+    console.error("Fetch All Posts Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch posts" });
+  }
+});
+// --------------------
+// Get post count for a user
+// --------------------
+router.get("/count/:userId", verifyToken, async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const postCount = await Post.countDocuments({ userId });
+    res.json({ success: true, count: postCount });
+  } catch (err) {
+    console.error("Fetch Post Count Error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch post count" });
   }
 });
 export default router;

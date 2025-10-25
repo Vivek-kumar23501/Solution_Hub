@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Container, Card, CardBody, CardTitle, CardText, ListGroup, ListGroupItem, Button } from "reactstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Card,
+  CardImg,
+  CardBody,
+  CardText,
+} from "reactstrap";
+import "./Profile.css";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
-
+  const [postCount, setPostCount] = useState(0);
+  const [showFriendPopup, setShowFriendPopup] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts"); // posts or doubts
   const token = localStorage.getItem("token");
 
+  // Fetch profile
   const fetchProfile = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/auth/my-profile", {
@@ -20,6 +33,7 @@ const Profile = () => {
     }
   };
 
+  // Fetch posts
   const fetchPosts = async (userId) => {
     try {
       const res = await axios.get(`http://localhost:5000/api/posts/user/${userId}`, {
@@ -32,6 +46,20 @@ const Profile = () => {
     }
   };
 
+  // Fetch post count
+  const fetchPostCount = async (userId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/posts/count/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success) setPostCount(res.data.count);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to fetch post count");
+    }
+  };
+
+  // Remove friend
   const handleRemoveFriend = async (friendId) => {
     if (!window.confirm("Are you sure you want to remove this friend?")) return;
 
@@ -40,10 +68,7 @@ const Profile = () => {
         `http://localhost:5000/api/auth/remove-friend/${friendId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.data.success) {
-        alert(res.data.message);
-        fetchProfile(); // refresh profile data
-      }
+      if (res.data.success) fetchProfile();
     } catch (err) {
       console.error(err);
       alert("Failed to remove friend");
@@ -55,58 +80,167 @@ const Profile = () => {
   }, [token]);
 
   useEffect(() => {
-    if (user) fetchPosts(user._id);
+    if (user) {
+      fetchPosts(user._id);
+      fetchPostCount(user._id);
+    }
   }, [user]);
 
   if (!user) return <p>Loading...</p>;
 
+  const normalPosts = posts.filter((post) => post.type === "Post");
+  const doubts = posts.filter((post) => post.type === "Doubt");
+
   return (
-    <Container style={{ marginTop: "2rem" }}>
-      <Card style={{ maxWidth: "600px", margin: "auto", padding: "1rem", boxShadow: "0 5px 15px rgba(0,0,0,0.1)" }}>
-        <CardBody>
-          <CardTitle tag="h4">{user.name}</CardTitle>
-          <CardText><strong>Email:</strong> {user.email}</CardText>
-          <CardText><strong>Mobile:</strong> {user.mobile}</CardText>
-          <CardText><strong>User ID:</strong> {user._id}</CardText>
+    <Container className="profile-container">
+      {/* Profile Header */}
+      <Row className="profile-header align-items-center mb-4">
+        <Col xs="12" md="3" className="text-center">
+          <div className="profile-pic-emoji">🧑‍💻</div>
+        </Col>
+        <Col xs="12" md="9">
+          <h2>{user.name}</h2>
+          <p>{user.bio}</p>
+          <p>
+            <strong>{postCount}</strong> posts •{" "}
+            <strong>
+              <Button
+                color="link"
+                className="p-0"
+                onClick={() => setShowFriendPopup(true)}
+              >
+                {user.friends?.length || 0} friends
+              </Button>
+            </strong>
+          </p>
+        </Col>
+      </Row>
 
-          <h5 style={{ marginTop: "1rem" }}>Friends</h5>
-          {user.friends.length === 0 ? (
-            <p>No friends yet</p>
-          ) : (
-            <ListGroup>
-              {user.friends.map((friend) => (
-                <ListGroupItem key={friend._id} className="d-flex justify-content-between align-items-center">
-                  <span>
-                    {friend.name} - {friend.email} - {friend.mobile}
-                  </span>
-                  <Button color="danger" size="sm" onClick={() => handleRemoveFriend(friend._id)}>
-                    Remove
-                  </Button>
-                </ListGroupItem>
-              ))}
-            </ListGroup>
-          )}
+      {/* Toggle Buttons for Posts/Doubts */}
+      <Row className="mb-3">
+        <Col xs="6">
+          <Button
+            color={activeTab === "posts" ? "primary" : "secondary"}
+            className="w-100"
+            onClick={() => setActiveTab("posts")}
+          >
+            Posts
+          </Button>
+        </Col>
+        <Col xs="6">
+          <Button
+            color={activeTab === "doubts" ? "primary" : "secondary"}
+            className="w-100"
+            onClick={() => setActiveTab("doubts")}
+          >
+            Doubts
+          </Button>
+        </Col>
+      </Row>
 
-          <h5 style={{ marginTop: "1rem" }}>My Posts & Doubts</h5>
-          {posts.length === 0 ? (
-            <p>No posts or doubts yet</p>
+      {/* Posts Grid */}
+      {activeTab === "posts" && (
+        <Row className="posts-grid mb-4">
+          {normalPosts.length === 0 ? (
+            <p>No posts yet</p>
           ) : (
-            posts.map((post) => (
-              <Card key={post._id} style={{ marginBottom: "0.5rem" }}>
-                <CardBody>
-                  <CardText>
-                    <strong>Type:</strong> {post.type.toUpperCase()}
-                  </CardText>
-                  <CardText>{post.description}</CardText>
-                  <CardText style={{ fontSize: "0.8rem", color: "#888" }}>
-                    {new Date(post.createdAt).toLocaleString()}
-                  </CardText>
-                </CardBody>
-              </Card>
+            normalPosts.map((post, idx) => (
+              <Col key={post._id + idx} xs="12" sm="6" md="4" lg="3" className="mb-3">
+                <Card className="post-card">
+                  {post.image && (
+                    <CardImg
+                      src={`http://localhost:5000/uploads/${post.image}`}
+                      alt="Post"
+                    />
+                  )}
+                  {post.video && (
+                    <video controls className="w-100">
+                      <source src={`http://localhost:5000/uploads/${post.video}`} />
+                    </video>
+                  )}
+                  <CardBody>
+                    <CardText>{post.description}</CardText>
+                    <CardText className="text-muted" style={{ fontSize: "0.8rem" }}>
+                      {new Date(post.createdAt).toLocaleString()}
+                    </CardText>
+                  </CardBody>
+                </Card>
+              </Col>
             ))
           )}
-        </CardBody>
-      </Card>
+        </Row>
+      )}
+
+      {/* Doubts Grid */}
+      {activeTab === "doubts" && (
+        <Row className="posts-grid mb-4">
+          {doubts.length === 0 ? (
+            <p>No doubts yet</p>
+          ) : (
+            doubts.map((post, idx) => (
+              <Col key={post._id + idx} xs="12" sm="6" md="4" lg="3" className="mb-3">
+                <Card className="post-card">
+                  {post.image && (
+                    <CardImg
+                      src={`http://localhost:5000/uploads/${post.image}`}
+                      alt="Doubt"
+                    />
+                  )}
+                  {post.video && (
+                    <video controls className="w-100">
+                      <source src={`http://localhost:5000/uploads/${post.video}`} />
+                    </video>
+                  )}
+                  <CardBody>
+                    <CardText>{post.description}</CardText>
+                    <CardText className="text-muted" style={{ fontSize: "0.8rem" }}>
+                      {new Date(post.createdAt).toLocaleString()}
+                    </CardText>
+                  </CardBody>
+                </Card>
+              </Col>
+            ))
+          )}
+        </Row>
+      )}
+
+      {/* Friend Popup */}
+      {showFriendPopup && (
+        <div className="friend-popup-overlay">
+          <div className="friend-popup-content">
+            <div className="popup-header">
+              <h5>Friends</h5>
+              <button
+                className="close-popup"
+                onClick={() => setShowFriendPopup(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="friends-list-popup">
+              {user.friends.length === 0 ? (
+                <p>No friends yet</p>
+              ) : (
+                user.friends.map((friend, idx) => (
+                  <div
+                    key={friend._id + idx}
+                    className="friend-popup-card d-flex justify-content-between align-items-center"
+                  >
+                    <span>{friend.name}</span>
+                    <Button
+                      color="danger"
+                      size="sm"
+                      onClick={() => handleRemoveFriend(friend._id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Container>
   );
 };
