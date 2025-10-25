@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Container, Form, FormGroup, Input, Button } from "reactstrap";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const Signup = () => {
   const [step, setStep] = useState(1);
@@ -68,6 +69,15 @@ const Signup = () => {
     }
   };
 
+  const linkStyle = {
+    display: "block",
+    textAlign: "center",
+    marginTop: "1rem",
+    color: "#3914b2ff",
+    textDecoration: "none",
+    fontWeight: "500",
+  };
+
   return (
     <Container className="mt-5" style={{
       maxWidth: "400px",
@@ -84,6 +94,7 @@ const Signup = () => {
           <FormGroup><Input type="email" name="email" placeholder="Email" onChange={handleChange} /></FormGroup>
           <FormGroup><Input type="tel" name="phone" placeholder="Phone" onChange={handleChange} /></FormGroup>
           <Button color="primary" className="w-100" onClick={sendOTP}>Send OTP</Button>
+          <Link to="/login" style={linkStyle}>Already have an account? Login</Link>
         </>
       )}
 
@@ -91,6 +102,7 @@ const Signup = () => {
         <>
           <FormGroup><Input type="text" name="otp" placeholder="Enter OTP" onChange={handleChange} /></FormGroup>
           <Button color="success" className="w-100" onClick={verifyOTP}>Verify OTP</Button>
+          <Link to="/login" style={linkStyle}>Back to Login</Link>
         </>
       )}
 
@@ -99,6 +111,7 @@ const Signup = () => {
           <FormGroup><Input type="password" name="password" placeholder="Password" onChange={handleChange} /></FormGroup>
           <FormGroup><Input type="password" name="confirmPassword" placeholder="Confirm Password" onChange={handleChange} /></FormGroup>
           <Button color="success" className="w-100" onClick={register}>Create Account</Button>
+          <Link to="/login" style={linkStyle}>Back to Login</Link>
         </>
       )}
     </Container>
