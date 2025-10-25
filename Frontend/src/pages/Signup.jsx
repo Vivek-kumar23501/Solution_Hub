@@ -73,7 +73,7 @@ const Signup = () => {
     display: "block",
     textAlign: "center",
     marginTop: "1rem",
-    color: "#764ba2",
+    color: "#3914b2ff",
     textDecoration: "none",
     fontWeight: "500",
   };
