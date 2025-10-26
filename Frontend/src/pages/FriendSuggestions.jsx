@@ -150,7 +150,7 @@ const FriendSuggestions = () => {
                   onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 >
                   <CardImg
-                    src={`https://i.pravatar.cc/150?u=${user.email}`}
+                    src={user.profilePicture || "https://i.pravatar.cc/150?u=" + user.email}
                     alt={user.name}
                     style={{
                       width: "100px",
@@ -208,7 +208,7 @@ const FriendSuggestions = () => {
                     onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     <CardImg
-                      src={`https://i.pravatar.cc/150?u=${user.email}`}
+                      src={user.profilePicture || "https://i.pravatar.cc/150?u=" + user.email}
                       alt={user.name}
                       style={{
                         width: "100px",
@@ -252,7 +252,7 @@ const FriendSuggestions = () => {
                     }}
                   >
                     <CardImg
-                      src={`https://i.pravatar.cc/150?u=${user.email}`}
+                      src={user.profilePicture || "https://i.pravatar.cc/150?u=" + user.email}
                       alt={user.name}
                       style={{
                         width: "100px",

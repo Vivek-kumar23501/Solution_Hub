@@ -285,7 +285,12 @@ router.get("/all-users", verifyToken, async (req, res) => {
       { password: 0, friends: 0, friendRequests: 0, sentRequests: 0 }
     );
 
-    res.json({ success: true, users });
+    const usersWithPics = users.map((u) => ({
+      ...u.toObject(),
+      profilePicture: getProfilePictureUrl(req, u.profilePicture),
+    }));
+
+    res.json({ success: true, users: usersWithPics });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch users" });
@@ -297,8 +302,14 @@ router.get("/all-users", verifyToken, async (req, res) => {
 // ---------------------
 router.get("/friend-requests", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate("friendRequests", "name email");
-    res.json({ success: true, friendRequests: user.friendRequests });
+    const user = await User.findById(req.user.id).populate("friendRequests", "name email profilePicture");
+
+    const requestsWithPics = user.friendRequests.map((u) => ({
+      ...u.toObject(),
+      profilePicture: getProfilePictureUrl(req, u.profilePicture),
+    }));
+
+    res.json({ success: true, friendRequests: requestsWithPics });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch friend requests" });
@@ -310,8 +321,14 @@ router.get("/friend-requests", verifyToken, async (req, res) => {
 // ---------------------
 router.get("/sent-requests", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate("sentRequests", "name email");
-    res.json({ success: true, sentRequests: user.sentRequests });
+    const user = await User.findById(req.user.id).populate("sentRequests", "name email profilePicture");
+
+    const sentWithPics = user.sentRequests.map((u) => ({
+      ...u.toObject(),
+      profilePicture: getProfilePictureUrl(req, u.profilePicture),
+    }));
+
+    res.json({ success: true, sentRequests: sentWithPics });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch sent requests" });
@@ -337,7 +354,14 @@ router.post("/send-friend-request/:id", verifyToken, async (req, res) => {
     await receiver.save();
     await sender.save();
 
-    res.json({ success: true, requestedUser: receiver, message: "Friend request sent" });
+    res.json({
+      success: true,
+      requestedUser: {
+        ...receiver.toObject(),
+        profilePicture: getProfilePictureUrl(req, receiver.profilePicture),
+      },
+      message: "Friend request sent",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to send friend request" });
@@ -366,15 +390,19 @@ router.post("/accept-friend-request/:id", verifyToken, async (req, res) => {
     await receiver.save();
     await sender.save();
 
-    res.json({ success: true, message: "Friend request accepted" });
+    res.json({
+      success: true,
+      message: "Friend request accepted",
+      friends: {
+        ...sender.toObject(),
+        profilePicture: getProfilePictureUrl(req, sender.profilePicture),
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to accept friend request" });
   }
 });
-
-
-
 // ---------------------
 // Get My Profile Data
 // ---------------------
@@ -423,6 +451,40 @@ router.delete("/remove-friend/:friendId", verifyToken, async (req, res) => {
   }
 });
 
+// Update Profile
+router.put("/update-profile", verifyToken, upload.single("profilePicture"), async (req, res) => {
+  try {
+    const { name, email, bio, mobile } = req.body;
+    const updateData = { name, email, bio, mobile };
+
+    if (req.file) {
+      updateData.profilePicture = req.file.filename; // store filename
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updateData },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Convert profilePicture to full URL
+    const updatedUserData = {
+      ...updatedUser.toObject(),
+      profilePicture: updatedUser.profilePicture
+        ? `${req.protocol}://${req.get("host")}/uploads/${updatedUser.profilePicture}`
+        : "",
+    };
+
+    res.json({ success: true, user: updatedUserData });
+  } catch (err) {
+    console.error("Update Profile Error:", err);
+    res.status(500).json({ success: false, message: "Failed to update profile" });
+  }
+});
 
 
 

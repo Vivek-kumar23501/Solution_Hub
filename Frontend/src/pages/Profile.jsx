@@ -9,6 +9,13 @@ import {
   CardImg,
   CardBody,
   CardText,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  Form,
+  FormGroup,
+  Label,
+  Input,
 } from "reactstrap";
 import "./Profile.css";
 
@@ -18,6 +25,14 @@ const Profile = () => {
   const [postCount, setPostCount] = useState(0);
   const [showFriendPopup, setShowFriendPopup] = useState(false);
   const [activeTab, setActiveTab] = useState("posts"); // posts or doubts
+  const [editModal, setEditModal] = useState(false);
+  const [editData, setEditData] = useState({
+    name: "",
+    bio: "",
+    mobile: "",
+    profilePicture: null,
+  });
+
   const token = localStorage.getItem("token");
 
   // Fetch profile
@@ -75,6 +90,58 @@ const Profile = () => {
     }
   };
 
+  // Open Edit Profile Modal
+  const openEditModal = () => {
+    setEditData({
+      name: user.name,
+      bio: user.bio || "",
+      mobile: user.mobile || "",
+      profilePicture: null,
+    });
+    setEditModal(true);
+  };
+
+  // Handle form input change
+  const handleInputChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "profilePicture") {
+      setEditData((prev) => ({ ...prev, profilePicture: files[0] }));
+    } else {
+      setEditData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Submit updated profile
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append("name", editData.name);
+      formData.append("bio", editData.bio);
+      formData.append("mobile", editData.mobile);
+      if (editData.profilePicture) {
+        formData.append("profilePicture", editData.profilePicture);
+      }
+
+      const res = await axios.put(
+        "http://localhost:5000/api/auth/update-profile",
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      if (res.data.success) {
+        setUser(res.data.user);
+        setEditModal(false);
+        alert("Profile updated successfully!");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update profile");
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
   }, [token]);
@@ -109,19 +176,18 @@ const Profile = () => {
         </Col>
         <Col xs="12" md="9">
           <h2>{user.name}</h2>
-          <p>{user.bio}</p>
+          <p>{user.bio || "No bio provided"}</p>
           <p>
             <strong>{postCount}</strong> posts •{" "}
             <strong>
-              <Button
-                color="link"
-                className="p-0"
-                onClick={() => setShowFriendPopup(true)}
-              >
+              <Button color="link" className="p-0" onClick={() => setShowFriendPopup(true)}>
                 {user.friends?.length || 0} friends
               </Button>
             </strong>
           </p>
+          <Button color="primary" onClick={openEditModal}>
+            Edit Profile
+          </Button>
         </Col>
       </Row>
 
@@ -153,15 +219,10 @@ const Profile = () => {
           {normalPosts.length === 0 ? (
             <p>No posts yet</p>
           ) : (
-            normalPosts.map((post, idx) => (
-              <Col key={post._id + idx} xs="12" sm="6" md="4" lg="3" className="mb-3">
+            normalPosts.map((post) => (
+              <Col key={post._id} xs="12" sm="6" md="4" lg="3" className="mb-3">
                 <Card className="post-card">
-                  {post.image && (
-                    <CardImg
-                      src={`http://localhost:5000/uploads/${post.image}`}
-                      alt="Post"
-                    />
-                  )}
+                  {post.image && <CardImg src={`http://localhost:5000/uploads/${post.image}`} alt="Post" />}
                   {post.video && (
                     <video controls className="w-100">
                       <source src={`http://localhost:5000/uploads/${post.video}`} />
@@ -186,15 +247,10 @@ const Profile = () => {
           {doubts.length === 0 ? (
             <p>No doubts yet</p>
           ) : (
-            doubts.map((post, idx) => (
-              <Col key={post._id + idx} xs="12" sm="6" md="4" lg="3" className="mb-3">
+            doubts.map((post) => (
+              <Col key={post._id} xs="12" sm="6" md="4" lg="3" className="mb-3">
                 <Card className="post-card">
-                  {post.image && (
-                    <CardImg
-                      src={`http://localhost:5000/uploads/${post.image}`}
-                      alt="Doubt"
-                    />
-                  )}
+                  {post.image && <CardImg src={`http://localhost:5000/uploads/${post.image}`} alt="Doubt" />}
                   {post.video && (
                     <video controls className="w-100">
                       <source src={`http://localhost:5000/uploads/${post.video}`} />
@@ -215,14 +271,11 @@ const Profile = () => {
 
       {/* Friend Popup */}
       {showFriendPopup && (
-        <div className="friend-popup-overlay">
-          <div className="friend-popup-content">
+        <div className="friend-popup-overlay" onClick={() => setShowFriendPopup(false)}>
+          <div className="friend-popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="popup-header">
               <h5>Friends</h5>
-              <button
-                className="close-popup"
-                onClick={() => setShowFriendPopup(false)}
-              >
+              <button className="close-popup" onClick={() => setShowFriendPopup(false)}>
                 &times;
               </button>
             </div>
@@ -230,9 +283,9 @@ const Profile = () => {
               {user.friends.length === 0 ? (
                 <p>No friends yet</p>
               ) : (
-                user.friends.map((friend, idx) => (
+                user.friends.map((friend) => (
                   <div
-                    key={friend._id + idx}
+                    key={friend._id}
                     className="friend-popup-card d-flex justify-content-between align-items-center"
                   >
                     <div className="d-flex align-items-center">
@@ -261,11 +314,7 @@ const Profile = () => {
                       )}
                       <span>{friend.name}</span>
                     </div>
-                    <Button
-                      color="danger"
-                      size="sm"
-                      onClick={() => handleRemoveFriend(friend._id)}
-                    >
+                    <Button color="danger" size="sm" onClick={() => handleRemoveFriend(friend._id)}>
                       Remove
                     </Button>
                   </div>
@@ -275,6 +324,64 @@ const Profile = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Profile Modal */}
+      <Modal isOpen={editModal} toggle={() => setEditModal(!editModal)}>
+        <ModalHeader toggle={() => setEditModal(!editModal)}>Edit Profile</ModalHeader>
+        <ModalBody>
+          <Form onSubmit={handleUpdateProfile}>
+            <FormGroup>
+              <Label for="name">Name</Label>
+              <Input
+                type="text"
+                name="name"
+                value={editData.name}
+                onChange={handleInputChange}
+                required
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="email">Email</Label>
+              <Input
+                type="email"
+                name="email"
+                value={user.email}
+                readOnly
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="bio">Bio</Label>
+              <Input
+                type="text"
+                name="bio"
+                value={editData.bio}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="mobile">Mobile</Label>
+              <Input
+                type="text"
+                name="mobile"
+                value={editData.mobile}
+                onChange={handleInputChange}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label for="profilePicture">Profile Picture</Label>
+              <Input
+                type="file"
+                name="profilePicture"
+                onChange={handleInputChange}
+                accept="image/*"
+              />
+            </FormGroup>
+            <Button color="primary" type="submit" className="w-100">
+              Update Profile
+            </Button>
+          </Form>
+        </ModalBody>
+      </Modal>
     </Container>
   );
 };
