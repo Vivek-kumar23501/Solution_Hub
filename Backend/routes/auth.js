@@ -6,6 +6,16 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { verifyToken } from "../middleware/authMiddleware.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+
+// Helper function to get full URL of profile picture
+const getProfilePictureUrl = (req, filename) => {
+  if (!filename) return "";
+  return `${req.protocol}://${req.get("host")}/uploads/${filename}`;
+};
 
 
 dotenv.config();
@@ -14,6 +24,22 @@ const router = express.Router();
 // Temporary OTP stores
 let otpStore = {};
 let forgotOtpStore = {};
+
+// ---------------------
+// Multer setup for profile picture
+// ---------------------
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = "./uploads";
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    cb(null, Date.now() + ext);
+  },
+});
+const upload = multer({ storage });
 
 // ==============================
 // Send OTP for Signup
@@ -26,9 +52,7 @@ router.post("/send-otp", async (req, res) => {
     const existingPending = await PendingUser.findOne({ email });
 
     if (existingUser || existingPending) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email already registered or pending!" });
+      return res.status(400).json({ success: false, message: "Email already registered or pending!" });
     }
 
     const otp = Math.floor(1000 + Math.random() * 9000);
@@ -70,6 +94,9 @@ router.post("/verify-otp", async (req, res) => {
     if (!pendingUser) {
       pendingUser = new PendingUser({ name, email, mobile, otpVerified: true });
       await pendingUser.save();
+    } else {
+      pendingUser.otpVerified = true;
+      await pendingUser.save();
     }
 
     res.json({ success: true, message: "OTP verified!" });
@@ -77,12 +104,9 @@ router.post("/verify-otp", async (req, res) => {
     res.status(400).json({ success: false, message: "Invalid OTP" });
   }
 });
-
-// ==============================
-// Register User (after OTP verification)
-// ==============================
-router.post("/register", async (req, res) => {
-  const { email, password, role } = req.body;
+// register 
+router.post("/register", upload.single("profilePic"), async (req, res) => {
+  const { email, password, role, bio, location } = req.body;
 
   try {
     const pendingUser = await PendingUser.findOne({ email });
@@ -98,12 +122,14 @@ router.post("/register", async (req, res) => {
       mobile: pendingUser.mobile,
       password: hashedPassword,
       role: role || "user",
+      bio: bio || "",
+      location: location || "",
+      profilePicture: req.file ? req.file.filename : "", // store only filename
     });
 
     const savedUser = await newUser.save();
     await PendingUser.deleteOne({ email });
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: savedUser._id, email: savedUser.email, role: savedUser.role },
       process.env.JWT_SECRET,
@@ -115,10 +141,13 @@ router.post("/register", async (req, res) => {
       message: "Account created successfully!",
       token,
       user: {
-        id: savedUser._id, // ✅ userId to store in frontend
+        id: savedUser._id,
         name: savedUser.name,
         email: savedUser.email,
         role: savedUser.role,
+        bio: savedUser.bio,
+        location: savedUser.location,
+        profilePicture: getProfilePictureUrl(req, savedUser.profilePicture),
       },
     });
   } catch (err) {
@@ -126,6 +155,7 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
+
 
 // ==============================
 // Login
@@ -135,14 +165,10 @@ router.post("/login", async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ success: false, message: "User not found" });
-    }
+    if (!user) return res.status(400).json({ success: false, message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Invalid password" });
-    }
+    if (!isMatch) return res.status(400).json({ success: false, message: "Invalid password" });
 
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
@@ -155,10 +181,13 @@ router.post("/login", async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user._id, // ✅ userId to store in frontend
+        id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        bio: user.bio,
+        location: user.location,
+        profilePicture: getProfilePictureUrl(req, user.profilePicture),
       },
     });
   } catch (err) {
@@ -166,6 +195,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ success: false, message: "Login failed" });
   }
 });
+
 
 // ==============================
 // Forgot Password - Send OTP
@@ -352,16 +382,27 @@ router.get("/my-profile", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select("-password") // exclude password
-      .populate("friends", "name email mobile"); // populate friends list
+      .populate("friends", "name email mobile profilePicture"); // include profilePicture for friends
 
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    res.json({ success: true, user });
+    // Convert user's profile picture to full URL
+    const userData = {
+      ...user.toObject(),
+      profilePicture: getProfilePictureUrl(req, user.profilePicture),
+      friends: user.friends.map(friend => ({
+        ...friend.toObject(),
+        profilePicture: getProfilePictureUrl(req, friend.profilePicture),
+      })),
+    };
+
+    res.json({ success: true, user: userData });
   } catch (err) {
     console.error("Fetch Profile Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch profile data" });
   }
 });
+
 
 // DELETE a friend
 router.delete("/remove-friend/:friendId", verifyToken, async (req, res) => {

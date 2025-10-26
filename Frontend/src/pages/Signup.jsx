@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Container, Form, FormGroup, Input, Button } from "reactstrap";
+import { Container, FormGroup, Input, Button } from "reactstrap";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
@@ -11,11 +11,20 @@ const Signup = () => {
     phone: "",
     otp: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    bio: "",
+    location: "",
+    profilePic: null
   });
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "profilePic") {
+      setForm({ ...form, profilePic: files[0] });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
 
   const sendOTP = async () => {
     try {
@@ -52,20 +61,26 @@ const Signup = () => {
       return alert("Passwords do not match!");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        password: form.password,
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("email", form.email);
+      formData.append("mobile", form.phone);
+      formData.append("password", form.password);
+      formData.append("bio", form.bio);
+      formData.append("location", form.location);
+      if (form.profilePic) formData.append("profilePic", form.profilePic);
+
+      const res = await axios.post("http://localhost:5000/api/auth/register", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
       if (res.data.success) {
         alert("Signup Completed 🎉");
-        setForm({ name: "", email: "", phone: "", otp: "", password: "", confirmPassword: "" });
+        setForm({ name: "", email: "", phone: "", otp: "", password: "", confirmPassword: "", bio: "", location: "", profilePic: null });
         setStep(1);
       }
     } catch (err) {
-      alert("Registration failed ❌");
+      alert(err.response?.data?.message || "Registration failed ❌");
     }
   };
 
@@ -110,6 +125,11 @@ const Signup = () => {
         <>
           <FormGroup><Input type="password" name="password" placeholder="Password" onChange={handleChange} /></FormGroup>
           <FormGroup><Input type="password" name="confirmPassword" placeholder="Confirm Password" onChange={handleChange} /></FormGroup>
+          <FormGroup><Input type="text" name="bio" placeholder="Short Bio" onChange={handleChange} /></FormGroup>
+          <FormGroup><Input type="text" name="location" placeholder="Location" onChange={handleChange} /></FormGroup>
+          <FormGroup>
+            <Input type="file" name="profilePic" onChange={handleChange} accept="image/*" />
+          </FormGroup>
           <Button color="success" className="w-100" onClick={register}>Create Account</Button>
           <Link to="/login" style={linkStyle}>Back to Login</Link>
         </>

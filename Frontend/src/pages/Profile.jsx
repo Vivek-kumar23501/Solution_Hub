@@ -96,7 +96,16 @@ const Profile = () => {
       {/* Profile Header */}
       <Row className="profile-header align-items-center mb-4">
         <Col xs="12" md="3" className="text-center">
-          <div className="profile-pic-emoji">🧑‍💻</div>
+          {user.profilePicture ? (
+            <img
+              src={user.profilePicture}
+              alt="Profile"
+              className="profile-pic-img"
+              style={{ width: "120px", height: "120px", borderRadius: "50%", objectFit: "cover" }}
+            />
+          ) : (
+            <div className="profile-pic-emoji">🧑‍💻</div>
+          )}
         </Col>
         <Col xs="12" md="9">
           <h2>{user.name}</h2>
@@ -226,7 +235,32 @@ const Profile = () => {
                     key={friend._id + idx}
                     className="friend-popup-card d-flex justify-content-between align-items-center"
                   >
-                    <span>{friend.name}</span>
+                    <div className="d-flex align-items-center">
+                      {friend.profilePicture ? (
+                        <img
+                          src={friend.profilePicture}
+                          alt={friend.name}
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            marginRight: "10px",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            background: "#ccc",
+                            marginRight: "10px",
+                          }}
+                        />
+                      )}
+                      <span>{friend.name}</span>
+                    </div>
                     <Button
                       color="danger"
                       size="sm"
