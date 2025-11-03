@@ -1,56 +1,103 @@
 .stories-container {
   width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 0;
   overflow-x: auto;
-  padding: 14px 0;
-  background: #fff; /* White clean background */
-  border-bottom: 1px solid #e5e5e5;
-  margin-left: 150px;
 }
 
 .stories-wrapper {
   display: flex;
   align-items: center;
-  gap: 74px; /* Equal gap between all stories */
-  padding: 0 18px;
-  width: max-content;
+  gap: 12px;
+  padding: 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stories-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .story-item {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   cursor: pointer;
-  transition: transform 0.2s ease-in-out;
+  min-width: 70px;
+  transition: transform 0.2s ease;
 }
 
 .story-item:hover {
-  transform: scale(1.07);
+  transform: scale(1.05);
 }
 
 .story-ring {
-  width: 72px;
-  height: 72px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   padding: 3px;
-  background: conic-gradient(#f09433, #dc2743, #cc2366, #bc1888, #f09433);
+  position: relative;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.story-ring.unseen {
+  background: linear-gradient(45deg, #ff004f, #ff9900, #f0f);
+  animation: gradient-rotate 3s linear infinite;
+}
+
+.story-ring.seen {
+  background: gray;
+  opacity: 0.6;
+}
+
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .story-img {
-  width: 66px;
-  height: 66px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #fff; /* White clean border */
+  border: 2px solid #000;
 }
 
 .story-name {
-  font-size: 0.8rem;
-  color: #000; /* Dark text */
-  font-weight: 500;
-  width: 74px;
-  text-overflow: ellipsis;
+  color: #fff;
+  font-size: 12px;
+  margin-top: 6px;
+  text-align: center;
+  max-width: 70px;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  margin-top: 5px;
+}
+
+/* Add Story button */
+.add-story {
+  position: relative;
+}
+
+.add-ring {
+  background: linear-gradient(45deg, #00d4ff, #0077ff);
+}
+
+.add-story-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #111;
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 26px;
+  font-weight: bold;
 }

@@ -1,0 +1,151 @@
+.story-upload-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.story-upload-container {
+  background: #111;
+  border-radius: 12px;
+  padding: 16px;
+  width: 90%;
+  max-width: 420px;
+  color: #fff;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+.upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.upload-area {
+  border: 2px dashed #555;
+  border-radius: 12px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.upload-area.dragging {
+  border-color: #09f;
+}
+
+.upload-placeholder {
+  text-align: center;
+  color: #aaa;
+}
+
+.upload-icon {
+  font-size: 40px;
+  margin-bottom: 6px;
+}
+
+.upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Filters */
+.filter-bw {
+  filter: grayscale(100%);
+}
+
+.filter-bright {
+  filter: brightness(1.3);
+}
+
+/* Filter buttons */
+.filter-options {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.filter-options button {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.filter-options button.active {
+  background: #09f;
+  border-color: #09f;
+}
+
+/* Camera view */
+.camera-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.camera-feed {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.capture-btn {
+  background: #09f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+/* Actions */
+.upload-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.upload-btn,
+.change-btn,
+.camera-btn {
+  background: #09f;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.change-btn {
+  background: #333;
+}
+
+.upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
