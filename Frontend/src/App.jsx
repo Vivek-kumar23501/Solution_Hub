@@ -9,7 +9,11 @@ import Friends from "./pages/FriendSuggestions.jsx";
 import CreatePostPage from "./pages/CreatePost.jsx";
 import Profile from "./pages/Profile.jsx";
 import StoriesContainer from "./components/StoriesContainer.jsx";
-import Navbar from "./components/Navbar.jsx";
+// import Navbar from "./components/Navbar.jsx";
+// import Search from "./pages/Search.jsx";
+// import Challenges from "./pages/Challenges.jsx";
+// import Notifications from "./pages/Notifications.jsx";
+// import Messages from "./pages/Messages.jsx";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -54,16 +58,35 @@ const PublicRoute = ({ children }) => {
     );
   }
   
-  return !isAuthenticated ? children : <Navigate to="/dashboard/home" />;
+  return !isAuthenticated ? children : <Navigate to="/" />;
+};
+
+// Layout component for pages with bottom navigation
+const LayoutWithNavigation = ({ children, activeSection }) => {
+  return (
+    <div className="app-layout">
+      {children}
+      <Taskbar activeSection={activeSection} />
+    </div>
+  );
+};
+
+// Layout for Home page (no bottom navigation as it has fixed sidebars)
+const HomeLayout = ({ children }) => {
+  return (
+    <div className="home-layout">
+      {children}
+    </div>
+  );
 };
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
 
   return (
     <>
-      {/* Show Navbar only when authenticated */}
-      {isAuthenticated && <Navbar />}
+      {/* Show Navbar only when authenticated and not on Home page */}
+      {/* {isAuthenticated && <Navbar />} */}
       
       <Routes>
         {/* Public Routes - Only accessible when NOT logged in */}
@@ -97,77 +120,125 @@ function AppContent() {
           path="/" 
           element={
             <ProtectedRoute>
-              <Navigate to="/dashboard/home" />
+              <Navigate to="/home" />
             </ProtectedRoute>
           } 
         />
         
+        {/* Home Route with fixed sidebars (no bottom navigation) */}
         <Route 
-          path="/dashboard/home" 
+          path="/home" 
           element={
             <ProtectedRoute>
-              <>
-                <Home />
-                {/* <Taskbar activeSection="home" /> */}
-              </>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/dashboard/stories" 
-          element={
-            <ProtectedRoute>
-              <>
-                <StoriesContainer />
-                <Taskbar activeSection="stories" />
-              </>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/dashboard/friend-suggestions" 
-          element={
-            <ProtectedRoute>
-              <>
-                <Friends />
-                <Taskbar activeSection="friend-suggestions" />
-              </>
-            </ProtectedRoute>
-          } 
-        /> 
-        
-        <Route 
-          path="/dashboard/posts" 
-          element={
-            <ProtectedRoute>
-              <>
-                <CreatePostPage />
-                <Taskbar activeSection="post" />
-              </>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/dashboard/profile" 
-          element={
-            <ProtectedRoute>
-              <>
-                <Profile />
-                <Taskbar activeSection="profile" />
-              </>
+              <HomeLayout>
+                <Home  to="/home" />
+              </HomeLayout>
             </ProtectedRoute>
           } 
         />
 
+        {/* Search Route */}
+        {/* <Route 
+          path="/search" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="search">
+                <Search />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        /> */}
+
+        {/* Problems Route */}
+        <Route 
+          path="/problems" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="problems">
+                <Friends />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Challenges Route */}
+        {/* <Route 
+          path="/challenges" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="challenges">
+                <Challenges />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        /> */}
+
+        {/* Notifications Route */}
+        {/* <Route 
+          path="/notifications" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="notifications">
+                <Notifications />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        /> */}
+
+        {/* Create Post Route */}
+        <Route 
+          path="/create" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="create">
+                <CreatePostPage />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Messages Route */}
+        {/* <Route 
+          path="/messages" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="messages">
+                <Messages />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        /> */}
+
+        {/* Profile Route */}
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="profile">
+                <Profile />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Stories Route (if needed separately) */}
+        <Route 
+          path="/stories" 
+          element={
+            <ProtectedRoute>
+              <LayoutWithNavigation activeSection="stories">
+                <StoriesContainer />
+              </LayoutWithNavigation>
+            </ProtectedRoute>
+          } 
+        />
+        
         {/* 404 Fallback */}
         <Route 
           path="*" 
           element={
             <ProtectedRoute>
-              <Navigate to="/dashboard/home" />
+              <Navigate to="/home" />
             </ProtectedRoute>
           } 
         />

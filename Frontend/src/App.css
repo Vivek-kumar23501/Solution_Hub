@@ -1,0 +1,155 @@
+/* Layout.css */
+.app-layout {
+  min-height: 100vh;
+  background-color: #fafafa;
+  padding-bottom: 60px; /* Space for bottom navigation */
+}
+
+.home-layout {
+  min-height: 100vh;
+  background-color: #fafafa;
+}
+
+/* Navbar Styles */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #dbdbdb;
+  padding: 0 20px;
+  z-index: 1000;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-brand {
+  font-size: 20px;
+  font-weight: 600;
+  background: linear-gradient(45deg, #E1306C, #F77737);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #262626;
+  font-size: 20px;
+  transition: color 0.2s ease;
+}
+
+.navbar-btn:hover {
+  color: #8e8e8e;
+}
+
+/* Taskbar Styles */
+.taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #dbdbdb;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 1000;
+}
+
+.taskbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 8px;
+  color: #8e8e8e;
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.taskbar-item.active {
+  color: #0095f6;
+}
+
+.taskbar-icon {
+  font-size: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-layout {
+    padding-bottom: 70px;
+  }
+  
+  .navbar {
+    padding: 0 16px;
+  }
+  
+  .taskbar {
+    padding: 10px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-brand {
+    font-size: 18px;
+  }
+  
+  .taskbar-item {
+    font-size: 9px;
+    padding: 6px;
+  }
+  
+  .taskbar-icon {
+    font-size: 18px;
+  }
+}
+
+/* Loading States */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 1.2rem;
+}
+
+/* Animation for page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 300ms, transform 300ms;
+}
