@@ -9,244 +9,197 @@ import Friends from "./pages/FriendSuggestions.jsx";
 import CreatePostPage from "./pages/CreatePost.jsx";
 import Profile from "./pages/Profile.jsx";
 import StoriesContainer from "./components/StoriesContainer.jsx";
-// import Navbar from "./components/Navbar.jsx";
-// import Search from "./pages/Search.jsx";
-// import Challenges from "./pages/Challenges.jsx";
-// import Notifications from "./pages/Notifications.jsx";
-// import Messages from "./pages/Messages.jsx";
 
-// Protected Route Component
+import LeftSidebar from "./components/LeftSidebar.jsx";
+import RightSidebar from "./components/RightSidebar.jsx";
+import "./App.css"; // For layout styling
+
+// ✅ Protected Route
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: '#0f172a',
-        color: '#94a3b8',
-        fontSize: '1.2rem'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          background: "#0f172a",
+          color: "#94a3b8",
+          fontSize: "1.2rem",
+        }}
+      >
         Loading...
       </div>
     );
   }
-  
+
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
-// Public Route Component (redirect to home if already authenticated)
+// ✅ Public Route (redirect to home if already logged in)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: '#0f172a',
-        color: '#94a3b8',
-        fontSize: '1.2rem'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          background: "#0f172a",
+          color: "#94a3b8",
+          fontSize: "1.2rem",
+        }}
+      >
         Loading...
       </div>
     );
   }
-  
-  return !isAuthenticated ? children : <Navigate to="/" />;
+
+  return !isAuthenticated ? children : <Navigate to="/home" />;
 };
 
-// Layout component for pages with bottom navigation
-const LayoutWithNavigation = ({ children, activeSection }) => {
-  return (
-    <div className="app-layout">
-      {children}
-    
-    </div>
-  );
+// ✅ Layout wrapper for pages WITH bottom navigation
+const LayoutWithNavigation = ({ children }) => {
+  return <div className="app-layout">{children}</div>;
 };
 
-// Layout for Home page (no bottom navigation as it has fixed sidebars)
-const HomeLayout = ({ children }) => {
+// ✅ Layout wrapper for Home page (with sidebars)
+const HomeLayout = () => {
   return (
     <div className="home-layout">
-      {children}
+      <div className="left-sidebar">
+        <LeftSidebar />
+      </div>
+
+      <div className="main-content">
+        <Home />
+      </div>
+
+      <div className="right-sidebar">
+        <RightSidebar />
+      </div>
     </div>
   );
 };
 
+// ✅ App Content
 function AppContent() {
-  // const { isAuthenticated } = useAuth();
-
   return (
-    <>
-      {/* Show Navbar only when authenticated and not on Home page */}
-      {/* {isAuthenticated && <Navbar />} */}
-      
-      <Routes>
-        {/* Public Routes - Only accessible when NOT logged in */}
-        <Route 
-          path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
-        />
-        <Route 
-          path="/signup" 
-          element={
-            <PublicRoute>
-              <Signup />
-            </PublicRoute>
-          } 
-        />
-        <Route 
-          path="/forgot-password" 
-          element={
-            <PublicRoute>
-              <ForgotPassword />
-            </PublicRoute>
-          } 
-        />
-        
-        {/* Protected Routes - Only accessible when logged in */}
-        <Route 
-          path="/" 
-          element={
-            <ProtectedRoute>
-              <Navigate to="/home" />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Home Route with fixed sidebars (no bottom navigation) */}
-        <Route 
-          path="/home" 
-          element={
-            <ProtectedRoute>
-              <HomeLayout>
-                <Home  to="/home" />
-              </HomeLayout>
-            </ProtectedRoute>
-          } 
-        />
+    <Routes>
+      {/* Public Routes */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <Signup />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        }
+      />
 
-        {/* Search Route */}
-        {/* <Route 
-          path="/search" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="search">
-                <Search />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        /> */}
+      {/* Protected Routes */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Navigate to="/home" />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Problems Route */}
-        <Route 
-          path="/problems" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="problems">
-                <Friends />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        />
+      {/* Home Page with both Sidebars */}
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute>
+            <HomeLayout />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Challenges Route */}
-        {/* <Route 
-          path="/challenges" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="challenges">
-                <Challenges />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        /> */}
+      {/* Friends */}
+      <Route
+        path="/problems"
+        element={
+          <ProtectedRoute>
+            <LayoutWithNavigation>
+              <Friends />
+            </LayoutWithNavigation>
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Notifications Route */}
-        {/* <Route 
-          path="/notifications" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="notifications">
-                <Notifications />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        /> */}
+      {/* Create Post */}
+      <Route
+        path="/create"
+        element={
+          <ProtectedRoute>
+            <LayoutWithNavigation>
+              <CreatePostPage />
+            </LayoutWithNavigation>
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Create Post Route */}
-        <Route 
-          path="/create" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="create">
-                <CreatePostPage />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        />
+      {/* Profile */}
+      <Route
+        path="/home/profile"
+        element={
+          <ProtectedRoute>
+            <LayoutWithNavigation>
+              <Profile />
+            </LayoutWithNavigation>
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Messages Route */}
-        {/* <Route 
-          path="/messages" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="messages">
-                <Messages />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        /> */}
+      {/* Stories */}
+      <Route
+        path="/stories"
+        element={
+          <ProtectedRoute>
+            <LayoutWithNavigation>
+              <StoriesContainer />
+            </LayoutWithNavigation>
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Profile Route */}
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="profile">
-                <Profile />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        />
-
-        {/* Stories Route (if needed separately) */}
-        <Route 
-          path="/stories" 
-          element={
-            <ProtectedRoute>
-              <LayoutWithNavigation activeSection="stories">
-                <StoriesContainer />
-              </LayoutWithNavigation>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* 404 Fallback */}
-        <Route 
-          path="*" 
-          element={
-            <ProtectedRoute>
-              <Navigate to="/home" />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
-    </>
+      {/* Fallback */}
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <Navigate to="/home" />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }
 
+// ✅ Main App Wrapper
 function App() {
   return (
     <AuthProvider>
