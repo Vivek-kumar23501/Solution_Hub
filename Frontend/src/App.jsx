@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from "./Context/AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
-import Taskbar from "./components/Taskbar.jsx";
+
 import Home from "./pages/Home.jsx";
 import Friends from "./pages/FriendSuggestions.jsx";
 import CreatePostPage from "./pages/CreatePost.jsx";
@@ -66,7 +66,7 @@ const LayoutWithNavigation = ({ children, activeSection }) => {
   return (
     <div className="app-layout">
       {children}
-      <Taskbar activeSection={activeSection} />
+    
     </div>
   );
 };
